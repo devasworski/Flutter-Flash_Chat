@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flash_chat/components/CutomWidgets.dart';
 import 'package:flash_chat/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'chat_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   static String routeName = "/registration";
@@ -9,6 +12,11 @@ class RegistrationScreen extends StatefulWidget {
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
+  final _auth = FirebaseAuth.instance;
+  String email;
+  String password;
+  bool isRegistering = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,8 +38,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               height: 48.0,
             ),
             TextField(
+              enabled: !isRegistering,
+              keyboardType: TextInputType.emailAddress,
+              textAlign: TextAlign.center,
               onChanged: (value) {
-                //Do something with the user input.
+                email = value;
               },
               decoration:
                   kInputFieldDecoration.copyWith(hintText: "Enter your email"),
@@ -40,8 +51,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               height: 8.0,
             ),
             TextField(
+              enabled: !isRegistering,
+              keyboardType: TextInputType.visiblePassword,
+              textAlign: TextAlign.center,
+              obscureText: true,
               onChanged: (value) {
-                //Do something with the user input.
+                password = value;
               },
               decoration: kInputFieldDecoration.copyWith(
                   hintText: "Enter your password"),
@@ -54,6 +69,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               child: RoundButton(
                 color: Colors.blueAccent,
                 text: 'Register',
+                onPressed: () async {
+                  setState(() {
+                    isRegistering = true;
+                  });
+                  try {
+                    final newUser = await _auth.createUserWithEmailAndPassword(
+                        email: email, password: password);
+                    if (newUser != null) {
+                      Navigator.pushNamed(context, ChatScreen.routeName);
+                    } else {
+                      isRegistering = false;
+                    }
+                  } catch (e) {
+                    print(e);
+                    isRegistering = false;
+                  }
+                },
               ),
             ),
           ],

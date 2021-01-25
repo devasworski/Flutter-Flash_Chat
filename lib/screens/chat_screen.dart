@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flash_chat/constants.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flash_chat/screens/welcome_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   static String routeName = "/chat";
@@ -8,6 +10,23 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  final _auth = FirebaseAuth.instance;
+
+  void getCurrentUSer() {
+    if (_auth.currentUser != null) {
+      print(_auth.currentUser.email);
+    } else {
+      print("Login error");
+      Navigator.popUntil(context, ModalRoute.withName(WelcomeScreen.routeName));
+    }
+  }
+
+  @override
+  void initState() {
+    getCurrentUSer();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
