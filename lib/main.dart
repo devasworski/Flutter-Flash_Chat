@@ -11,8 +11,9 @@ import 'screens/welcome_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
-  runApp(FlashChat());
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  runApp(FlashChat());
 }
 
 class FlashChat extends StatelessWidget {
