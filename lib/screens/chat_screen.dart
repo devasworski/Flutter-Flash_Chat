@@ -49,7 +49,10 @@ class _ChatScreenState extends State<ChatScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            MessageStreamBuilder(firestore: _firestore),
+            MessageStreamBuilder(
+              firestore: _firestore,
+              myEmail: _auth.currentUser.email,
+            ),
             Container(
               decoration: kMessageContainerDecoration,
               child: Row(
@@ -66,8 +69,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   FlatButton(
                     onPressed: () {
-                      _firestore.collection('messages').add(
-                          {'sender': _auth.currentUser.email, 'msg': msg_text});
+                      _firestore.collection('messages').add({
+                        'sender': _auth.currentUser.email,
+                        'msg': msg_text,
+                        'createdTime':
+                            new DateTime.now().millisecondsSinceEpoch,
+                      });
                       messageTextController.clear();
                     },
                     child: Text(
@@ -88,14 +95,19 @@ class _ChatScreenState extends State<ChatScreen> {
 class MessageStreamBuilder extends StatelessWidget {
   MessageStreamBuilder({
     @required this.firestore,
+    @required this.myEmail,
   });
 
   final FirebaseFirestore firestore;
+  final String myEmail;
 
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
-        stream: firestore.collection('messages').snapshots(),
+        stream: firestore
+            .collection('messages')
+            .orderBy('createdTime', descending: true)
+            .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return Center(
@@ -108,10 +120,12 @@ class MessageStreamBuilder extends StatelessWidget {
             texts.add(MessageBubble(
               msg: doc.data()['msg'],
               sender: doc.data()['sender'],
+              myMsg: (doc.data()['sender'] == myEmail),
             ));
           }
           return Expanded(
             child: ListView(
+              reverse: true,
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 20),
               children: texts,
             ),
@@ -121,23 +135,34 @@ class MessageStreamBuilder extends StatelessWidget {
 }
 
 class MessageBubble extends StatelessWidget {
-  MessageBubble({@required this.msg, @required this.sender});
+  MessageBubble(
+      {@required this.msg, @required this.sender, @required this.myMsg});
   String msg;
   String sender;
+  bool myMsg;
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment:
+            myMsg ? CrossAxisAlignment.start : CrossAxisAlignment.end,
         children: [
           Text(
             sender,
             style: TextStyle(fontSize: 12, color: Colors.grey),
           ),
           Material(
-            borderRadius: BorderRadius.circular(30),
-            color: Colors.lightBlueAccent,
+            borderRadius: myMsg
+                ? BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
+                    topRight: Radius.circular(30))
+                : BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30)),
+            color: myMsg ? Colors.green : Colors.lightBlueAccent,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 10),
               child: Text(
